@@ -1,12 +1,13 @@
 var request = require('request');
-var secrets = require('./secrets')
 var fs = require("fs");
+require('dotenv').config()
+
 var args = process.argv.slice(2);
 
 console.log('Welcome to the GitHub Avatar Downloader!');
 
 function getRepoContributors(repoOwner, repoName, callback) {
-  if (!repoOwner && !repoName){
+  if (!repoOwner && !repoName) {
     console.log("Please enter a valid repo name and owner...");
     return false;
   }
@@ -17,7 +18,7 @@ function getRepoContributors(repoOwner, repoName, callback) {
     headers: {
       'User-Agent': 'request'
     },
-    Authorization: secrets.GITHUB_TOKEN
+    Authorization: process.env.GITHUB_TOKEN
   };
 
   request(options, function(err, res, body) {
@@ -26,7 +27,6 @@ function getRepoContributors(repoOwner, repoName, callback) {
 }
 
 function cb(err, body) {
-  console.log(body);
   body.forEach(function(person) {
     var newPath = './avatars/' + person.login;
     downloadImageByURL(person.avatar_url, newPath);
@@ -37,7 +37,6 @@ function cb(err, body) {
 }
 
 function downloadImageByURL(url, filePath) {
-
   request
     .get(url)
     .on('error', function(err) {
