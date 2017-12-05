@@ -1,14 +1,16 @@
 var request = require('request');
 var fs = require("fs");
-require('dotenv').config()
+var mkdirp = require("mkdirp");
+var dotenv = require('dotenv').config();
 
 var args = process.argv.slice(2);
 
 console.log('Welcome to the GitHub Avatar Downloader!');
 
 function getRepoContributors(repoOwner, repoName, callback) {
-  if (!repoOwner && !repoName) {
-    console.log("Please enter a valid repo name and owner...");
+
+  if(!process.env.GITHUB_TOKEN){
+    console.log("Invalid token or incorrect credentials, please contact an admin.");
     return false;
   }
 
@@ -16,24 +18,36 @@ function getRepoContributors(repoOwner, repoName, callback) {
     url: "https://api.github.com/repos/" + repoOwner + "/" + repoName + "/contributors",
     json: true,
     headers: {
-      'User-Agent': 'request'
+      'User-Agent': 'request',
+      'Authorization': "token " + process.env.GITHUB_TOKEN
     },
-    Authorization: process.env.GITHUB_TOKEN
   };
 
   request(options, function(err, res, body) {
+    if(res.headers.status !== "200 OK"){
+        err = res.headers.status;
+    }
+
     callback(err, body);
   });
 }
 
 function cb(err, body) {
+  if (err) {
+    console.log(err);
+    return false;
+  }
+
   body.forEach(function(person) {
+    mkdirp('./avatars/', function (err) {
+      if (err) {
+        console.error(err);
+      }
+    });
     var newPath = './avatars/' + person.login;
     downloadImageByURL(person.avatar_url, newPath);
   });
-  if (err) {
-    console.log("Error:", err);
-  }
+
 }
 
 function downloadImageByURL(url, filePath) {
